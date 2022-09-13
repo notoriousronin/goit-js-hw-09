@@ -1,5 +1,5 @@
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css';
+import 'flatpickr/dist/themes/material_red.css';
 import { Report } from 'notiflix/build/notiflix-report-aio';
 
 const startEl = document.querySelector('button[data-start]');
