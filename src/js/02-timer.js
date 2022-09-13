@@ -4,15 +4,14 @@ import { Report } from 'notiflix/build/notiflix-report-aio';
 
 const startEl = document.querySelector('button[data-start]');
 const dateTime = document.querySelector('#datetime-picker');
-const days = document.querySelector('[data-days]');
-const hours = document.querySelector('[data-hours]');
-const minutes = document.querySelector('[data-minutes]');
-const seconds = document.querySelector('[data-seconds]');
-let initialTime = null;
-const currentDate = Date.now();
+const dateNow = Date.now();
+let calendarDate = null;
 startEl.disabled = true;
-let deltaTime = null;
-let time = null;
+
+const daysEl = document.querySelector('[data-days]');
+const hoursEl = document.querySelector('[data-hours]');
+const minutesEl = document.querySelector('[data-minutes]');
+const secondsEl = document.querySelector('[data-seconds]');
 
 const options = {
   enableTime: true,
@@ -20,17 +19,16 @@ const options = {
   defaultDate: new Date(),
   minuteIncrement: 1,
   onClose(selectedDates) {
-    if (selectedDates[0].getTime() <= currentDate) {
+    calendarDate = selectedDates[0] - dateNow;
+    if (calendarDate <= 0) {
       Report.failure(
-        'Error',
-        'Please, enter only a date in the future',
-        'Done'
+        'Think again',
+        'Please choose a date in the future',
+        'Okay'
       );
-    } else {
-      startEl.disabled = false;
-      deltaTime = selectedDates[0].getTime() - currentDate;
-      time = selectedDates[0];
     }
+    startEl.disabled = false;
+    return (calendarDate = selectedDates[0]);
   },
 };
 
@@ -39,45 +37,51 @@ flatpickr(dateTime, options);
 startEl.addEventListener('click', startElClickRun);
 
 function startElClickRun() {
-  const intervalId = setInterval(() => {
-    if (deltaTime <= 0) {
-      return clearInterval(intervalId);
-    }
-    addTextContent(deltaTime);
-    deltaTime -= 1;
-  }, 1000);
+  timer.start(calendarDate);
 }
 
-function addLeadingZero(value) {
-  return String(value).padStart(2, '0');
-}
+const timer = {
+  intervalId: null,
 
-function convertMs(deltaTime) {
-  // Number of milliseconds per unit of time
-  const second = 1000;
-  const minute = second * 60;
-  const hour = minute * 60;
-  const day = hour * 24;
+  start(timerDeadline) {
+    this.intervalId = setInterval(() => {
+      const dateTimerNow = Date.now();
+      const difference = timerDeadline - dateTimerNow;
+      if (difference <= 0) {
+        stop();
+      }
+      const { days, hours, minutes, seconds } = this.convertMs(difference);
+      daysEl.textContent = this.pad(days);
+      hoursEl.textContent = this.pad(hours);
+      minutesEl.textContent = this.pad(minutes);
+      secondsEl.textContent = this.pad(seconds);
+    }, 1000);
+  },
 
-  // Remaining days
-  const days = addLeadingZero(Math.floor(deltaTime / day));
-  // Remaining hours
-  const hours = addLeadingZero(Math.floor((deltaTime % day) / hour));
-  // Remaining minutes
-  const minutes = addLeadingZero(
-    Math.floor(((deltaTime % day) % hour) / minute)
-  );
-  // Remaining seconds
-  const seconds = addLeadingZero(
-    Math.floor((((deltaTime % day) % hour) % minute) / second)
-  );
-  return { days, hours, minutes, seconds };
-}
+  stop() {
+    clearInterval(this.intervalId);
+  },
 
-function addTextContent() {
-  const { days, hours, minutes, seconds } = convertMs(time - new Date());
-  days.textContent = days;
-  hours.textContent = hours;
-  minutes.textContent = minutes;
-  seconds.textContent = seconds;
-}
+  convertMs(ms) {
+    // Number of milliseconds per unit of time
+    const second = 1000;
+    const minute = second * 60;
+    const hour = minute * 60;
+    const day = hour * 24;
+
+    // Remaining days
+    const days = Math.floor(ms / day);
+    // Remaining hours
+    const hours = Math.floor((ms % day) / hour);
+    // Remaining minutes
+    const minutes = Math.floor(((ms % day) % hour) / minute);
+    // Remaining seconds
+    const seconds = Math.floor((((ms % day) % hour) % minute) / second);
+
+    return { days, hours, minutes, seconds };
+  },
+
+  pad(Value) {
+    return String(Value).padStart(2, 0);
+  },
+};
