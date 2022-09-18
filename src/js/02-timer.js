@@ -48,7 +48,7 @@ const timer = {
       const dateTimerNow = Date.now();
       const difference = timerDeadline - dateTimerNow;
       if (difference <= 0) {
-        stop();
+        this.stop();
       }
       const { days, hours, minutes, seconds } = this.convertMs(difference);
       daysEl.textContent = this.pad(days);
